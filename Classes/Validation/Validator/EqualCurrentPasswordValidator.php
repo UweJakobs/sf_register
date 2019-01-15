@@ -35,6 +35,16 @@ class EqualCurrentPasswordValidator extends \TYPO3\CMS\Extbase\Validation\Valida
     protected $acceptsEmptyValues = false;
 
     /**
+     * @var \TYPO3\CMS\Core\Context\Context
+     */
+    protected $context;
+
+    /**
+     * @var \Evoweb\SfRegister\Domain\Repository\FrontendUserRepository
+     */
+    protected $userRepository;
+
+    /**
      * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManager
      */
     protected $configurationManager;
@@ -44,11 +54,15 @@ class EqualCurrentPasswordValidator extends \TYPO3\CMS\Extbase\Validation\Valida
      */
     protected $settings = [];
 
-    /**
-     * @var \Evoweb\SfRegister\Domain\Repository\FrontendUserRepository
-     */
-    protected $userRepository;
+    public function injectContext(\TYPO3\CMS\Core\Context\Context $context)
+    {
+        $this->context = $context;
+    }
 
+    public function injectUserRepository(\Evoweb\SfRegister\Domain\Repository\FrontendUserRepository $userRepository)
+    {
+        $this->userRepository = $userRepository;
+    }
 
     public function injectConfigurationManager(
         \TYPO3\CMS\Extbase\Configuration\ConfigurationManager $configurationManager
@@ -59,11 +73,6 @@ class EqualCurrentPasswordValidator extends \TYPO3\CMS\Extbase\Validation\Valida
             'SfRegister',
             'Form'
         );
-    }
-
-    public function injectUserRepository(\Evoweb\SfRegister\Domain\Repository\FrontendUserRepository $userRepository)
-    {
-        $this->userRepository = $userRepository;
     }
 
     /**
@@ -79,10 +88,7 @@ class EqualCurrentPasswordValidator extends \TYPO3\CMS\Extbase\Validation\Valida
                 1301599489
             );
         } else {
-            /** @noinspection PhpInternalEntityUsedInspection */
-            $user = $this->userRepository->findByUid(
-                $this->getTypoScriptFrontendController()->fe_user->user['uid']
-            );
+            $user = $this->userRepository->findByUid($this->context->getAspect('frontend.user')->get('id'));
 
             if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('saltedpasswords')) {
                 /** @var \TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashFactory $passwordHashFactory */
@@ -114,14 +120,8 @@ class EqualCurrentPasswordValidator extends \TYPO3\CMS\Extbase\Validation\Valida
         }
     }
 
-    protected function userIsLoggedIn(): bool
+    public function userIsLoggedIn(): bool
     {
-        /** @noinspection PhpInternalEntityUsedInspection */
-        return is_array($this->getTypoScriptFrontendController()->fe_user->user);
-    }
-
-    protected function getTypoScriptFrontendController(): \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController
-    {
-        return $GLOBALS['TSFE'];
+        return $this->context->getAspect('frontend.user')->isLoggedIn();
     }
 }

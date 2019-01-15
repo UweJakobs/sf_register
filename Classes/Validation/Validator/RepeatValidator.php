@@ -1,6 +1,8 @@
 <?php
 namespace Evoweb\SfRegister\Validation\Validator;
 
+use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
+
 /***************************************************************
  * Copyright notice
  *
@@ -27,7 +29,7 @@ namespace Evoweb\SfRegister\Validation\Validator;
 /**
  * A repeated value validator
  */
-class RepeatValidator extends \TYPO3\CMS\Extbase\Validation\Validator\AbstractValidator
+class RepeatValidator extends \TYPO3\CMS\Extbase\Validation\Validator\AbstractValidator implements SettableInterface
 {
     /**
      * @var bool
@@ -49,7 +51,7 @@ class RepeatValidator extends \TYPO3\CMS\Extbase\Validation\Validator\AbstractVa
     /**
      * Setter for model
      *
-     * @param mixed $model
+     * @param \Evoweb\SfRegister\Domain\Model\FrontendUser|\Evoweb\SfRegister\Domain\Model\Password $model
      */
     public function setModel($model)
     {
@@ -69,8 +71,7 @@ class RepeatValidator extends \TYPO3\CMS\Extbase\Validation\Validator\AbstractVa
     public function isValid($value)
     {
         $propertyName = str_replace('Repeat', '', $this->propertyName);
-        $getterMethod = 'get' . ucfirst($propertyName);
-        if ($value != $this->model->{$getterMethod}()) {
+        if ($value != $this->getPropertyValue($this->model, $propertyName)) {
             $this->addError(
                 $this->translateErrorMessage(
                     'error_repeatitionwasnotequal',
@@ -80,5 +81,24 @@ class RepeatValidator extends \TYPO3\CMS\Extbase\Validation\Validator\AbstractVa
                 1307965971
             );
         }
+    }
+
+    /**
+     * Load the property value to be used for validation.
+     *
+     * In case the object is a doctrine proxy, we need to load the real instance first.
+     *
+     * @param object $object
+     * @param string $propertyName
+     *
+     * @return mixed
+     */
+    protected function getPropertyValue($object, $propertyName)
+    {
+        // @todo add support for lazy loading proxies, if needed
+        if (ObjectAccess::isPropertyGettable($object, $propertyName)) {
+            return ObjectAccess::getProperty($object, $propertyName);
+        }
+        return ObjectAccess::getProperty($object, $propertyName, true);
     }
 }
